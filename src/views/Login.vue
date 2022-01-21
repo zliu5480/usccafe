@@ -28,7 +28,7 @@
       <el-form-item style="width:100%;">
         <el-button :loading="loading" size="medium" type="primary" style="width:100%;" @click.native.prevent="handleLogin">
           <span v-if="!loading">Login</span>
-          <span v-else>Loading...</span>
+          <span v-else>Logging in...</span>
         </el-button>
       </el-form-item>
     </el-form>
@@ -51,7 +51,8 @@ export default {
       loginForm: {},
       loginRules: {},
       Background: Background,
-      codeUrl: ""
+      codeUrl: "",
+      loading: false
     }
   },
   methods:{
@@ -65,6 +66,47 @@ export default {
 }
 </script>
 
-<style scoped>
-
+<style rel="stylesheet/scss" lang="scss">
+.login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background-size: cover;
+}
+.title {
+  margin: 0 auto 30px auto;
+  text-align: center;
+  color: #707070;
+}
+.login-form {
+  border-radius: 6px;
+  background: #f0f0f0;
+  width: 385px;
+  padding: 25px 25px 5px 25px;
+  .el-input {
+    height: 38px;
+    input {
+      height: 38px;
+    }
+  }
+  .input-icon{
+    height: 39px;width: 14px;margin-left: 2px;
+  }
+}
+.login-tip {
+  font-size: 13px;
+  text-align: center;
+  color: #bfbfbf;
+}
+.login-code {
+  width: 33%;
+  display: inline-block;
+  height: 38px;
+  float: right;
+  img{
+    cursor: pointer;
+    vertical-align:middle
+  }
+}
 </style>
