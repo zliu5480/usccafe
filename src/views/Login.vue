@@ -48,7 +48,13 @@ export default {
   name: "Login",
   data(){
     return{
-      loginForm: {},
+      loginForm: {
+        username: "admin",
+        password: "admin",
+        code: "",
+        rememberMe: false,
+        uuid: ""
+      },
       loginRules: {},
       Background: Background,
       codeUrl: "",
@@ -57,7 +63,13 @@ export default {
   },
   methods:{
     getCode(){
-
+      //Rend request to backend
+      //Need to install axios
+      this.$axios.get("http://localhost:8000/auth/code").then(res=>{
+        console.log(res);
+        this.codeUrl = res.data.img
+        this.loginForm.uuid = res.data.uuid
+      })
     },
     handleLogin(){
 
