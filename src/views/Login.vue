@@ -43,9 +43,13 @@
 
 <script>
 import Background from "@/assets/images/background.jpg"
+import { encrypt } from "@/utils/rsaEncrypt";
 
 export default {
   name: "Login",
+  created() {
+    this.getCode()
+  },
   data(){
     return{
       loginForm: {
@@ -55,7 +59,11 @@ export default {
         rememberMe: false,
         uuid: ""
       },
-      loginRules: {},
+      loginRules: {
+        username: [{required: true, trigger: "blur", message: "Enter username"}],
+        password: [{required: true, trigger: "blur", message: "Enter password"}],
+        code: [{required: true, trigger: "blur", message: "Enter verification code"}]
+      },
       Background: Background,
       codeUrl: "",
       loading: false
@@ -65,14 +73,26 @@ export default {
     getCode(){
       //Rend request to backend
       //Need to install axios
-      this.$axios.get("http://localhost:8000/auth/code").then(res=>{
-        console.log(res);
+      this.$axios.get("http://localhost:8131/auth/code").then(res=>{
+        //console.log(res);
         this.codeUrl = res.data.img
         this.loginForm.uuid = res.data.uuid
       })
     },
     handleLogin(){
-
+      this.$refs.loginForm.validate(valid=>{
+        if(valid){
+          this.$router.push("/home")
+          this.loginForm.password = encrypt(this.loginForm.password)
+          this.$axios.post("http://localhost:8131/auth/login",this.loginForm).then(res=>{
+            //console.log(res);
+            //Use $router.push if we want to go back to login page.
+            //Use $router.replace if we don't want to go back to login page.
+            this.$router.push("/home")
+          })
+        }
+        else alert("Error")
+      })
     }
   }
 }
