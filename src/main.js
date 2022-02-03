@@ -7,11 +7,11 @@ import './plugins/element.js'
 // global css
 import './assets/styles/index.scss'
 // axios
-import axios from 'axios'
+import request from '@/utils/request'
 
 Vue.use(Element)
 Vue.config.productionTip = false
-Vue.prototype.$axios = axios
+Vue.prototype.$request = request
 
 new Vue({
   router,

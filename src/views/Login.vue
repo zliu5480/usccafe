@@ -32,23 +32,22 @@
         </el-button>
       </el-form-item>
     </el-form>
-    <!--  Bottom  -->
-<!--    <div v-if="$store.state.settings.showFooter" id="el-login-footer">-->
-<!--      <span v-html="$store.state.settings.footerTxt" />-->
-<!--      <span> ⋅ </span>-->
-<!--      <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank">{{ $store.state.settings.caseNumber }}</a>-->
-<!--    </div>-->
   </div>
 </template>
 
 <script>
-import Background from "@/assets/images/background.jpg"
-import { encrypt } from "@/utils/rsaEncrypt";
-
+import { encrypt } from '@/utils/rsaEncrypt'
+import Config from '@/settings'
+import { getCodeImg } from '@/api/login'
+import Cookies from 'js-cookie'
+import qs from 'qs'
+import Background from '@/assets/images/background.jpg'
 export default {
   name: "Login",
   created() {
     this.getCode()
+    this.getCookie()
+    this.point()
   },
   data(){
     return{
@@ -69,33 +68,94 @@ export default {
       loading: false
     }
   },
-  methods:{
-    getCode(){
-      //Rend request to backend
-      //Need to install axios
-      this.$axios.get("http://localhost:8131/auth/code").then(res=>{
-        //console.log(res);
-        this.codeUrl = res.data.img
-        this.loginForm.uuid = res.data.uuid
+  watch: {
+    $route: {
+      handler: function(route) {
+        const data = route.query
+        if (data && data.redirect) {
+          this.redirect = data.redirect
+          delete data.redirect
+          if (JSON.stringify(data) !== '{}') {
+            this.redirect = this.redirect + '&' + qs.stringify(data, { indices: false })
+          }
+        }
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    getCode() {
+      getCodeImg().then(res => {
+        this.codeUrl = res.img
+        this.loginForm.uuid = res.uuid
       })
     },
-    handleLogin(){
-      this.$refs.loginForm.validate(valid=>{
-        if(valid){
-          this.$router.push("/home")
-          this.loginForm.password = encrypt(this.loginForm.password)
-          this.$axios.post("http://localhost:8131/auth/login",this.loginForm).then(res=>{
-            //console.log(res);
-            //Use $router.push if we want to go back to login page.
-            //Use $router.replace if we don't want to go back to login page.
-            this.$router.push("/home")
-          })
+    getCookie() {
+      const username = Cookies.get('username')
+      let password = Cookies.get('password')
+      const rememberMe = Cookies.get('rememberMe')
+      // save password
+      this.cookiePass = password === undefined ? '' : password
+      password = password === undefined ? this.loginForm.password : password
+      this.loginForm = {
+        username: username === undefined ? this.loginForm.username : username,
+        password: password,
+        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
+        code: ''
+      }
+    },
+    handleLogin() {
+      this.$refs.loginForm.validate(valid => {
+        const user = {
+          username: this.loginForm.username,
+          password: this.loginForm.password,
+          rememberMe: this.loginForm.rememberMe,
+          code: this.loginForm.code,
+          uuid: this.loginForm.uuid
         }
-        else alert("Error")
+        if (user.password !== this.cookiePass) {
+          user.password = encrypt(user.password)
+        }
+        if (valid) {
+          this.loading = true
+          if (user.rememberMe) {
+            Cookies.set('username', user.username, { expires: Config.passCookieExpires })
+            Cookies.set('password', user.password, { expires: Config.passCookieExpires })
+            Cookies.set('rememberMe', user.rememberMe, { expires: Config.passCookieExpires })
+          } else {
+            Cookies.remove('username')
+            Cookies.remove('password')
+            Cookies.remove('rememberMe')
+          }
+          //this.$router.push({ path: this.redirect || '/' })
+          this.$store.dispatch('Login', user).then(() => {
+            this.loading = false
+            this.$router.push({ path: this.redirect || '/' })
+          }).catch(() => {
+            this.loading = false
+            this.getCode()
+          })
+        } else {
+          console.log('error submit!!')
+          return false
+        }
       })
+    },
+    point() {
+      const point = Cookies.get('point') !== undefined
+      if (point) {
+        this.$notify({
+          title: 'Notification',
+          message: 'Section expired',
+          type: 'warning',
+          duration: 5000
+        })
+        Cookies.remove('point')
+      }
     }
   }
 }
+
 </script>
 
 <style rel="stylesheet/scss" lang="scss">
